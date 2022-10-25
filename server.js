@@ -55,28 +55,49 @@ app.get('/messages', (req, res) => {
 // 	})
 // })
 
-//CLEANED UP WITH PROMISES
-app.post('/messages', (req, res) => {
+// //CLEANED UP WITH PROMISES
+// app.post('/messages', (req, res) => {
+// 	let newMessage = new Message(req.body)
+
+// 	newMessage.save()
+// 	.then(() => {
+// 		console.log('saved')
+// 		return Message.findOne({message: 'badword'})
+// 	})
+// 	.then(censored => {
+// 		if(censored) {
+// 			console.log('naughty', censored)
+// 			return Message.deleteOne({_id: censored.id})
+// 		}
+// 		io.emit('message', req.body)
+// 		res.sendStatus(200)
+// 	})
+// 	.catch((err) => {
+// 		res.sendStatus(500)
+// 		return console.error(err)
+// 	})
+// })
+
+//REWRITTEN WITH ASYNC/AWAIT
+app.post('/messages', async (req, res) => {
 	let newMessage = new Message(req.body)
 
-	newMessage.save()
-	.then(() => {
+	let savedMessage = await newMessage.save()
+	
 		console.log('saved')
-		return Message.findOne({message: 'badword'})
-	})
-	.then(censored => {
-		if(censored) {
-			console.log('naughty', censored)
-			return Message.deleteOne({_id: censored.id})
-		}
+	let censoredWord = Message.findOne({message: 'badword'})
+
+	if(censoredWord) {
+		await Message.deleteOne({_id: censoredWord.id})
+	} else {
 		io.emit('message', req.body)
 		res.sendStatus(200)
-	})
-	.catch((err) => {
-		res.sendStatus(500)
-		return console.error(err)
-	})
+	}
+
+
 })
+
+
 
 io.on('connection', (socket) => {
 	console.log('a user connected')
